@@ -1,0 +1,15 @@
+{
+  "name": "n8n-playwright-integration",
+  "version": "1.0.0",
+  "description": "n8n with Playwright integration on Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "n8n start"
+  },
+  "dependencies": {
+    "playwright": "^1.0.0",
+    "n8n-nodes-playwright": "^x.x.x"
+  },
+  "author": "YourName",
+  "license": "MIT"
+}
