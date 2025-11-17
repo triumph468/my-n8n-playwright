@@ -1,40 +1,38 @@
-FROM node:18-bullseye-slim
-
-ENV NODE_ENV=production
-ENV N8N_PORT=5678
-ENV N8N_PROTOCOL=http
+FROM node:20-bullseye-slim
 
 # 必要パッケージ
 RUN apt-get update && apt-get install -y \
     wget \
+    gnupg \
+    curl \
     unzip \
     fontconfig \
-    locales \
     libnss3 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libx11-xcb1 \
+    libatk1.0-0 \
+    libcups2 \
     libxcomposite1 \
     libxdamage1 \
-    libxfixes3 \
     libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
+    libxkbcommon0 \
+    libpango1.0-0 \
     libxshmfence1 \
-    xdg-utils \
+    libasound2 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Playwright をインストール（最新版）
+RUN npm install -g playwright && \
+    playwright install --with-deps
 
-# n8n + Playwright を GLOBAL にインストール
-RUN npm install -g n8n playwright && \
-    npx playwright install --with-deps
+# n8n をグローバルインストール
+RUN npm install -g n8n
 
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# データディレクトリ
+ENV N8N_USER_FOLDER=/root/.n8n
 
 EXPOSE 5678
 
-CMD ["docker-entrypoint.sh"]
+# 正しい CMD（これが無いと "command start not found" が出る！）
+CMD ["n8n", "start"]
