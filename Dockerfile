@@ -1,38 +1,31 @@
-FROM node:20-bullseye-slim
+FROM n8nio/n8n:latest
 
-# 必要パッケージ
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    curl \
-    unzip \
-    fontconfig \
-    libnss3 \
-    libatk1.0-0 \
-    libcups2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libxkbcommon0 \
-    libpango1.0-0 \
-    libxshmfence1 \
-    libasound2 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxext6 \
-    && rm -rf /var/lib/apt/lists/*
+# Playwright の必要パッケージ（alpine 用）
+USER root
 
-# Playwright をインストール（最新版）
-RUN npm install -g playwright && \
-    playwright install --with-deps
+RUN apk update && apk add --no-cache \
+    chromium \
+    chromium-chromedriver \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    nodejs \
+    npm
 
-# n8n をグローバルインストール
-RUN npm install -g n8n
+# n8n カスタムノード用ディレクトリへ
+WORKDIR /data
 
-# データディレクトリ
-ENV N8N_USER_FOLDER=/root/.n8n
+# Playwright 拡張ノードをインストール
+RUN npm install n8n-nodes-playwright-ext --omit=dev
 
-EXPOSE 5678
+# CHROME_PATH を Playwright に教えてあげる
+ENV CHROME_PATH="/usr/bin/chromium-browser"
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
-# 正しい CMD（これが無いと "command start not found" が出る！）
-CMD ["n8n", "start"]
+# 権限戻す
+USER node
+
+# n8n を起動
+CMD ["n8n"]
