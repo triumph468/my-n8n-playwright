@@ -1,31 +1,42 @@
 FROM n8nio/n8n:latest
 
-# Playwright の必要パッケージ（alpine 用）
+# Playwright の必要ライブラリ
 USER root
-
-RUN apk update && apk add --no-cache \
-    chromium \
-    chromium-chromedriver \
-    nss \
-    freetype \
-    harfbuzz \
+RUN apt-get update && apt-get install -y \
+    wget \
     ca-certificates \
-    ttf-freefont \
-    nodejs \
-    npm
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libasound2 \
+    libx11-xcb1 \
+    libxshmfence1 \
+    libcurl4 \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
-# n8n カスタムノード用ディレクトリへ
-WORKDIR /data
+# Playwright-ext と Playwright のインストール
+USER node
+RUN npm install -g n8n-nodes-playwright-ext playwright
 
-# Playwright 拡張ノードをインストール
-RUN npm install n8n-nodes-playwright-ext --omit=dev
+# Playwright のブラウザ本体を Docker 内にインストール
+RUN npx playwright install --with-deps chromium
 
-# CHROME_PATH を Playwright に教えてあげる
-ENV CHROME_PATH="/usr/bin/chromium-browser"
-ENV PUPPETEER_SKIP_DOWNLOAD=true
+# n8n のデータディレクトリにカスタムノードを追加
+RUN mkdir -p /home/node/.n8n/nodes
+RUN cp -r /usr/local/lib/node_modules/n8n-nodes-playwright-ext /home/node/.n8n/nodes/
 
-# 権限戻す
+# 権限修正
+USER root
+RUN chown -R node:node /home/node/.n8n
+
 USER node
 
-# n8n を起動
 CMD ["n8n"]
