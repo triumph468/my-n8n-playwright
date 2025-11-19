@@ -1,11 +1,10 @@
-FROM n8nio/n8n:latest
+FROM n8nio/n8n:1.74.0-debian
 
+# 必要ライブラリ
 USER root
-
-# Playwright の依存関係（Debian用・最小セット）
 RUN apt-get update && apt-get install -y \
-    wget \
     ca-certificates \
+    wget \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
@@ -19,23 +18,21 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libx11-xcb1 \
     libxshmfence1 \
-    libcurl4 \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Playwright-ext と Playwright 本体
+# Playwright-ext ノードのインストール
 USER node
 RUN npm install -g n8n-nodes-playwright-ext playwright
 
-# Playwright のブラウザ（これが絶対必要）
+# Playwright ブラウザ本体をインストール
 RUN npx playwright install chromium
 
-# カスタムノードを配置
-RUN mkdir -p /home/node/.n8n/nodes
-RUN cp -r /usr/local/lib/node_modules/n8n-nodes-playwright-ext /home/node/.n8n/nodes/
-
+# n8n のカスタムノードディレクトリへコピー
 USER root
-RUN chown -R node:node /home/node/.n8n
+RUN mkdir -p /home/node/.n8n/nodes \
+    && cp -r /usr/local/lib/node_modules/n8n-nodes-playwright-ext /home/node/.n8n/nodes/ \
+    && chown -R node:node /home/node/.n8n
 
 USER node
 CMD ["n8n"]
