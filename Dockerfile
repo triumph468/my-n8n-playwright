@@ -1,12 +1,13 @@
-# --- Base: Official n8n image (latest, stable, with correct CLI setup) ---
-FROM n8nio/n8n:latest
+FROM node:20
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Playwright dependencies (Chromium only)
+# Install Chromium dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
+    git \
+    fontconfig \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
     libcups2 \
@@ -17,16 +18,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxkbcommon0 \
     libxfixes3 \
     libxshmfence1 \
+    libgtk-3-0 \
+    libglib2.0-0 \
+    libnss3 \
+    libxss1 \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Playwright + Chromium only
+# Install n8n
+RUN npm install -g n8n
+
+# Install Playwright Chromium only
 RUN npm install -g playwright && \
     PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium
 
-# n8n default workdir
 WORKDIR /data
 
 EXPOSE 5678
+
+ENV N8N_HOST=0.0.0.0
+ENV N8N_PORT=5678
 
 CMD ["n8n"]
