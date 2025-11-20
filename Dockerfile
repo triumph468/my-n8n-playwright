@@ -1,62 +1,66 @@
-# ベースは軽めで安定した Node.js スリムイメージ
-FROM node:18-slim
+# ---- Base: lightweight Node + necessary libs for Playwright ----
+FROM node:current-slim
 
-# 必要なパッケージをインストール（Playwright が要求するネイティブ依存）
-# ここで一度にインストールしてキャッシュを小さくする
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      ca-certificates \
-      wget \
-      gnupg \
-      lsb-release \
-      libgbm1 \
-      libnss3 \
-      libxss1 \
-      libasound2 \
-      libatk1.0-0 \
-      libatk-bridge2.0-0 \
-      libcups2 \
-      libdrm2 \
-      libx11-xcb1 \
-      libxcomposite1 \
-      libxdamage1 \
-      libxrandr2 \
-      libxshmfence1 \
-      libpangocairo-1.0-0 \
-      libpango-1.0-0 \
-      libgtk-3-0 \
-      fonts-liberation \
-      tzdata \
+# Prevent tzdata from prompting
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required dependencies for Chromium/Playwright minimal
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    wget \
+    git \
+    unzip \
+    fontconfig \
+    locales \
+    gconf-service \
+    libasound2 \
+    libatk1.0-0 \
+    libc6 \
+    libcairo2 \
+    libcups2 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgcc1 \
+    libgconf-2-4 \
+    libglib2.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    xvfb \
     && rm -rf /var/lib/apt/lists/*
 
-# 作業ディレクトリ
-WORKDIR /home/node/app
+# ---- Install n8n (latest global) ----
+RUN npm install -g n8n
 
-# n8n をグローバルにインストール（安定版）
-# Playwright をプロジェクト依存でインストール
-RUN npm install -g n8n@^0.258.0  || npm install -g n8n
+# ---- Install Playwright + Chromium (latest) ----
+# playwright-core + chromium brings only what's needed
+RUN npm install -g playwright && \
+    PLAYWRIGHT_BROWSERS_PATH=0 playwright install chromium
 
-# Playwright と Chromium をインストール
-# --with-deps は環境によって利用可能だが、ここではブラウザ本体を明示インストール
-RUN npm init -y \
-  && npm install playwright \
-  && npx playwright install chromium
+# Default working directory
+WORKDIR /data
 
-# n8n のデータを格納するディレクトリを準備し、権限を node ユーザに渡す
-RUN mkdir -p /home/node/.n8n && chown -R node:node /home/node
-
-# デフォルトポート
+# n8n recommended port
 EXPOSE 5678
 
-# 推奨：環境変数のデフォルト
-ENV N8N_PORT=5678 \
-    N8N_HOST=0.0.0.0 \
-    N8N_PROTOCOL=http \
-    TZ=Asia/Tokyo \
-    NODE_ENV=production
+# Environment variables for Render-friendly execution
+ENV N8N_EDITOR_BASE_URL=http://localhost:5678
+ENV N8N_HOST=0.0.0.0
 
-# 非rootユーザで実行（node: イメージに既存）
-USER node
-
-# デフォルトコマンド：n8n をフォアグラウンドで起動
-CMD ["n8n", "start"]
+CMD ["n8n"]
