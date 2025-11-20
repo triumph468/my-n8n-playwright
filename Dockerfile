@@ -22,6 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
     libnss3 \
     libxss1 \
+    libasound2 \
+    libxi6 \
     xvfb \
     && rm -rf /var/lib/apt/lists/*
 
